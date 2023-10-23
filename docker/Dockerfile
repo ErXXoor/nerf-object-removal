@@ -2,7 +2,7 @@
 FROM mambaorg/micromamba:1.4.4 as micromamba
 
 # Base image
-FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu20.04
+FROM nvcr.io/nvidia/tensorflow:23.09-tf2-py3
 # need devel for /usr/local/cuda/bin/ptxas
 
 #
@@ -83,7 +83,7 @@ RUN micromamba create -n object-removal python=3.8 -c conda-forge
 # LD_LIBRARY_PATH
 # libcuda.so.1 is in /usr/local/cuda/compat
 # libnvinfer.so is in .../lib/python3.8/site-packages/tensorrt
-ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/cuda/compat:/opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/:/opt/conda/envs/object-removal/lib/python3.8/site-packages/nvidia/cudnn/lib/"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/:/usr/local/lib/python3.10/dist-packages/nvidia/cuda_runtime/lib/"
 
 ENV XLA_FLAGS=--xla_gpu_strict_conv_algorithm_picker=false
 ENV TF_CPP_MIN_LOG_LEVEL=0
@@ -97,39 +97,40 @@ ENV TF_CPP_MIN_LOG_LEVEL=0
 
 RUN --mount=type=cache,target=/root/.cache \
     eval "$(micromamba shell hook --shell=bash)" && \
-    micromamba activate object-removal && \
+    micromamba activate base && \
     pip install \
-      "jax[cuda11_cudnn82]==0.3.21" \
-      "jaxlib==0.3.20+cuda11.cudnn82" \
+      "jax[cuda12_local]" \
+      "jaxlib" \
       "flax==0.5.1" \
       "chex==0.1.5" \
       "optax==0.1.5" \
       "oryx==0.2.4" \
-      "tensorflow==2.11.0" \
+      # "tensorflow==2.11.0" \
       "tqdm==4.65" \
       "pandas==2.0.2" \
       "pyyaml==6.0" \
       "matplotlib==3.7.1" \
-      "scikit-image==0.17.2" \
-      "open3d==0.13.0" \
+      "scikit-image" \
+      "open3d" \
       "gin-config==0.5" \
       "dm-pix==0.2.1" \
       "numpy==1.23.3" \
       "torchvision==0.15.1" \
       "nvidia-tensorrt==99" \
       "tensorrt_libs==8.6.1" \
+      "orbax-checkpoint"\
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html \
       --extra-index-url https://pypi.nvidia.com
 
 # Fix tensorrt version mismatch
-RUN ln -s /opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/libnvinfer.so.{8,7} && \
-    ln -s /opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/libnvinfer_plugin.so.{8,7}
+# RUN ln -s /opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/libnvinfer.so.{8,7} && \
+#     ln -s /opt/conda/envs/object-removal/lib/python3.8/site-packages/tensorrt_libs/libnvinfer_plugin.so.{8,7}
 
 # Install orbax without upgrading to jax 0.4.2
-RUN --mount=type=cache,target=/root/.cache \
-    eval "$(micromamba shell hook --shell=bash)" && \
-    micromamba activate object-removal && \
-    pip install "orbax==0.1.7" --no-deps
+# RUN --mount=type=cache,target=/root/.cache \
+#     eval "$(micromamba shell hook --shell=bash)" && \
+#     micromamba activate object-removal && \
+#     pip install "orbax==0.1.7" --no-deps
 
 #
 # Install Lama
@@ -138,7 +139,7 @@ RUN --mount=type=cache,target=/root/.cache \
 COPY ./external/lama /app/object-removal/external/lama
 RUN --mount=type=cache,target=/root/.cache \
     eval "$(micromamba shell hook --shell=bash)" && \
-    micromamba activate object-removal && \
+    micromamba activate base && \
     cd /app/object-removal/external/lama && \
     pip install -r requirements.txt
 
