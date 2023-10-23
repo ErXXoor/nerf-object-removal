@@ -44,3 +44,4 @@ preprocessing/*.ipynb
 tests
 external/lama/big-lama-v0/config.yaml
 model/configs/custom/default.gin.bak
+data/
