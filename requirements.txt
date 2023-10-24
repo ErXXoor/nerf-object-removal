@@ -178,7 +178,7 @@
 # rich==11.1.0
 # rsa==4.8
 # scikit-image
-scikit-learn
+# scikit-learn
 # scipy==1.8.1
 # scooby==0.5.12
 # seaborn==0.12.2
